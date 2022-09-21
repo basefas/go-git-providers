@@ -85,3 +85,9 @@ func (c *FileClient) Get(ctx context.Context, path, branch string, optFns ...git
 
 	return files, nil
 }
+
+// GetContent get file content without download
+func (c *FileClient) GetContent(ctx context.Context, path, branch string) (*string, error) {
+	// TODO
+	return nil, nil
+}

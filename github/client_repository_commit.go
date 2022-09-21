@@ -125,3 +125,71 @@ func (c *CommitClient) Create(ctx context.Context, branch string, message string
 
 	return newCommit(c, nCommit), nil
 }
+
+// CreateAndDelete creates or deletes a commit with the given specifications.
+func (c *CommitClient) CreateAndDelete(ctx context.Context, branch string, message string, files []gitprovider.CommitFile, deleteFiles []gitprovider.CommitFile) (gitprovider.Commit, error) {
+
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no files added")
+	}
+
+	treeEntries := make([]*github.TreeEntry, 0)
+	for _, file := range files {
+		treeEntries = append(treeEntries, &github.TreeEntry{
+			Path:    file.Path,
+			Mode:    &githubNewFileMode,
+			Type:    &githubBlobTypeFile,
+			Content: file.Content,
+		})
+	}
+
+	for _, file := range deleteFiles {
+		treeEntries = append(treeEntries, &github.TreeEntry{
+			SHA:     nil,
+			Path:    file.Path,
+			Mode:    &githubNewFileMode,
+			Type:    &githubBlobTypeFile,
+			Content: nil,
+		})
+	}
+
+	commits, err := c.ListPage(ctx, branch, 1, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	latestCommitTreeSHA := commits[0].Get().TreeSha
+
+	tree, _, err := c.c.Client().Git.CreateTree(ctx, c.ref.GetIdentity(), c.ref.GetRepository(), latestCommitTreeSHA, treeEntries)
+	if err != nil {
+		return nil, err
+	}
+
+	latestCommitSHA := commits[0].Get().Sha
+	nCommit, _, err := c.c.Client().Git.CreateCommit(ctx, c.ref.GetIdentity(), c.ref.GetRepository(), &github.Commit{
+		Message: &message,
+		Tree:    tree,
+		Parents: []*github.Commit{
+			{
+				SHA: &latestCommitSHA,
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ref := "refs/heads/" + branch
+	ghRef := &github.Reference{
+		Ref: &ref,
+		Object: &github.GitObject{
+			SHA: nCommit.SHA,
+		},
+	}
+
+	if _, _, err := c.c.Client().Git.UpdateRef(ctx, c.ref.GetIdentity(), c.ref.GetRepository(), ghRef, true); err != nil {
+		return nil, err
+	}
+
+	return newCommit(c, nCommit), nil
+}

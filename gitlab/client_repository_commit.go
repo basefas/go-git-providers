@@ -19,7 +19,6 @@ package gitlab
 import (
 	"context"
 	"fmt"
-
 	"github.com/fluxcd/go-git-providers/gitprovider"
 	"github.com/xanzy/go-gitlab"
 )
@@ -96,4 +95,10 @@ func (c *CommitClient) Create(_ context.Context, branch string, message string, 
 	}
 
 	return newCommit(c, commit), nil
+}
+
+// CreateAndDelete creates or deletes a commit with the given specifications.
+func (c *CommitClient) CreateAndDelete(ctx context.Context, branch string, message string, files []gitprovider.CommitFile, deleteFiles []gitprovider.CommitFile) (gitprovider.Commit, error) {
+	// TODO
+	return nil, nil
 }

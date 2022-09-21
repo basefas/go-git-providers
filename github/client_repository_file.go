@@ -18,6 +18,7 @@ package github
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 
@@ -80,4 +81,24 @@ func (c *FileClient) Get(ctx context.Context, path, branch string, optFns ...git
 	}
 
 	return files, nil
+}
+
+// GetContent get file content without download
+func (c *FileClient) GetContent(ctx context.Context, path, branch string) (*string, error) {
+
+	opts := &github.RepositoryContentGetOptions{
+		Ref: branch,
+	}
+
+	fileContent, _, _, err := c.c.Client().Repositories.GetContents(ctx, c.ref.GetIdentity(), c.ref.GetRepository(), path, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	decodeString, err := base64.StdEncoding.DecodeString(*fileContent.Content)
+	if err != nil {
+		return nil, err
+	}
+	content := string(decodeString)
+	return &content, nil
 }

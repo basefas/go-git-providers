@@ -215,6 +215,8 @@ type CommitClient interface {
 	ListPage(ctx context.Context, branch string, perPage int, page int) ([]Commit, error)
 	// Create creates a commit with the given specifications.
 	Create(ctx context.Context, branch string, message string, files []CommitFile) (Commit, error)
+	// CreateAndDelete creates a commit with the given specifications.
+	CreateAndDelete(ctx context.Context, branch string, message string, files []CommitFile, deleteFiles []CommitFile) (Commit, error)
 }
 
 // BranchClient operates on the branches for a specific repository.
@@ -242,6 +244,8 @@ type PullRequestClient interface {
 type FileClient interface {
 	// GetFiles fetch files content from specific path and branch
 	Get(ctx context.Context, path, branch string, optFns ...FilesGetOption) ([]*CommitFile, error)
+	// GetContent retrieves file content
+	GetContent(ctx context.Context, path, branch string) (*string, error)
 }
 
 // TreeClient operates on the trees for a Git repository which describe the hierarchy between files in the repository
